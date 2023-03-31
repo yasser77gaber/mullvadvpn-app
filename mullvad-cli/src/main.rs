@@ -11,6 +11,10 @@ pub const BIN_NAME: &str = env!("CARGO_BIN_NAME");
 #[command(author, version = mullvad_version::VERSION, about, long_about = None)]
 #[command(propagate_version = true)]
 enum Cli {
+    /// Interactive TUI
+    #[clap(subcommand)]
+    Interactive(interactive::Interactive),
+
     /// Control and display information about your Mullvad account
     #[clap(subcommand)]
     Account(account::Account),
@@ -154,6 +158,7 @@ enum Cli {
 #[tokio::main]
 async fn main() -> Result<()> {
     match Cli::parse() {
+        Cli::Interactive(cmd) => cmd.handle().await,
         Cli::Account(cmd) => cmd.handle().await,
         Cli::Bridge(cmd) => cmd.handle().await,
         Cli::Connect { wait } => tunnel_state::connect(wait).await,
