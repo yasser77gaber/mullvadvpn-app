@@ -293,7 +293,7 @@ impl From<WireguardRelayQuery> for WireguardConstraints {
             port: value.port,
             ip_version: value.ip_version,
             entry_location: value.entry_location,
-            use_multihop: value.use_multihop.is_only_and(|use_multihop| use_multihop),
+            use_multihop: value.use_multihop.unwrap_or(false),
         }
     }
 }

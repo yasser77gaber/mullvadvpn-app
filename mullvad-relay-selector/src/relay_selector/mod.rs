@@ -115,8 +115,8 @@ pub struct SelectorConfig {
 /// motivator for introducing these seemingly useless derivates of [`SelectorConfig`].
 ///
 /// The second one is a custom config, where [`SelectorConfig::relay_settings`] is [`RelaySettings::Custom`].
-/// For this variant, the  an endpoint where the client should connect to is already specified inside of the variant,
-/// so in practice relay selector's function is superflous. Also, there exists no mapping to [`RelayQueryBuilder`].
+/// For this variant, the endpoint where the client should connect to is already specified inside of the variant,
+/// so in practice the relay selector becomes superflous. Also, there exists no mapping to [`RelayQueryBuilder`].
 #[derive(Debug, Clone)]
 enum SpecializedSelectorConfig<'a> {
     // This variant implements `From<NormalSelectorConfig> for RelayQuery`
@@ -440,8 +440,7 @@ impl RelaySelector {
     /// This function is only really useful for testing-purposes. It is exposed to ease testing of
     /// other mullvad crates which depend on the retry behaviour of [`RelaySelector`].
     pub fn would_return(connection_attempt: usize, config: &SelectorConfig) -> Option<TunnelType> {
-        let config = SpecializedSelectorConfig::from(config);
-        match config {
+        match SpecializedSelectorConfig::from(config) {
             // This case is not really interesting
             SpecializedSelectorConfig::Custom(_) => None,
             SpecializedSelectorConfig::Normal(config) => Some(

@@ -1,4 +1,4 @@
-//! This module implement functions for producing a [`MullvadEndpoint`] given a Wireguard or
+//! This module implements functions for producing a [`MullvadEndpoint`] given a Wireguard or
 //! OpenVPN relay chosen by the relay selector.
 //!
 //! [`MullvadEndpoint`] contains all the necessary information for establishing a connection
@@ -7,7 +7,7 @@
 //!
 //! [`MullvadEndpoint`]: mullvad_types::endpoint::MullvadEndpoint
 
-use std::net::{IpAddr, SocketAddr, SocketAddrV4};
+use std::net::{IpAddr, SocketAddr};
 
 use ipnetwork::IpNetwork;
 use mullvad_types::{
@@ -20,8 +20,6 @@ use talpid_types::net::{
     all_of_the_internet, wireguard::PeerConfig, Endpoint, IpVersion, TransportProtocol,
 };
 
-use crate::constants::WIREGUARD_EXIT_PORT;
-
 use super::{
     query::{BridgeQuery, OpenVpnRelayQuery, WireguardRelayQuery},
     WireguardConfig,
@@ -30,7 +28,7 @@ use super::{
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("No OpenVPN endpoint could be derived")]
-    NoOpenVPNEndpoint,
+    NoOpenVpnEndpoint,
     #[error("No bridge endpoint could be derived")]
     NoBridgeEndpoint,
     #[error("The selected relay does not support IPv6")]
@@ -97,12 +95,15 @@ fn wireguard_multihop_endpoint(
     exit: &Relay,
     entry: &Relay,
 ) -> Result<MullvadWireguardEndpoint, Error> {
+    /// The standard port on which an exit relay accepts connections from an entry relay in a
+    /// multihop circuit.
+    const WIREGUARD_EXIT_PORT: u16 = 51820;
     let exit_endpoint = {
         let ip = exit.ipv4_addr_in;
         // The port that the exit relay listens for incoming connections from entry
         // relays is *not* derived from the original query / user settings.
         let port = WIREGUARD_EXIT_PORT;
-        SocketAddrV4::new(ip, port).into()
+        SocketAddr::from((ip, port))
     };
     let exit = PeerConfig {
         public_key: exit.endpoint_data.unwrap_wireguard_ref().public_key.clone(),
@@ -117,7 +118,7 @@ fn wireguard_multihop_endpoint(
     let entry_endpoint = {
         let host = get_address_for_wireguard_relay(query, entry)?;
         let port = get_port_for_wireguard_relay(query, data)?;
-        SocketAddr::new(host, port)
+        SocketAddr::from((host, port))
     };
     let entry = PeerConfig {
         public_key: entry
@@ -126,7 +127,7 @@ fn wireguard_multihop_endpoint(
             .public_key
             .clone(),
         endpoint: entry_endpoint,
-        // The entry peer should only be able to route incomming VPN traffic to the
+        // The entry peer should only be able to route incoming VPN traffic to the
         // exit peer.
         allowed_ips: vec![IpNetwork::from(exit.endpoint.ip())],
         // This will be filled in later
@@ -241,7 +242,7 @@ fn openvpn_singlehop_endpoint(
         .filter(|&endpoint| compatible_openvpn_port_combo(port_constraint, endpoint))
         .choose(&mut rand::thread_rng())
         .map(|endpoint| Endpoint::new(exit.ipv4_addr_in, endpoint.port, endpoint.protocol))
-        .ok_or(Error::NoOpenVPNEndpoint)
+        .ok_or(Error::NoOpenVpnEndpoint)
 }
 
 /// Configure an endpoint that will be used together with a bridge.

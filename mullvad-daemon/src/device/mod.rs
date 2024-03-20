@@ -1443,10 +1443,14 @@ mod test {
         use talpid_types::net::TunnelType;
         // No special relay constraints / user settings are assumed
         let config = SelectorConfig::default();
-        // It ought to be enough that the first 3 connection attempts will yield a Wireguard relay
-        for attempt in 0..3 {
+        for attempt in 0.. {
             let typ = RelaySelector::would_return(attempt, &config).unwrap();
             assert_eq!(typ, TunnelType::Wireguard);
+
+            if TunnelStateChangeHandler::should_check_validity_on_attempt(attempt) {
+                // Now that we've triggered a device check, we can give up
+                break;
+            }
         }
     }
 }
