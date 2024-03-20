@@ -16,7 +16,7 @@ use super::query::RelayQuery;
 
 /// Filter a list of relays and their endpoints based on constraints.
 /// Only relays with (and including) matching endpoints are returned.
-pub fn new_filter_matching_relay_list<'a, R: Iterator<Item = &'a Relay> + Clone>(
+pub fn filter_matching_relay_list<'a, R: Iterator<Item = &'a Relay> + Clone>(
     query: &RelayQuery,
     relays: R,
     custom_lists: &CustomListsSettings,

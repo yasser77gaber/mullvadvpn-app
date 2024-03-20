@@ -40,7 +40,7 @@ use crate::error::{EndpointErrorDetails, Error};
 
 use self::{
     detailer::{openvpn_endpoint, wireguard_endpoint},
-    matcher::{filter_matching_bridges, new_filter_matching_relay_list},
+    matcher::{filter_matching_bridges, filter_matching_relay_list},
     parsed_relays::ParsedRelays,
     query::{BridgeQuery, Intersection, OpenVpnRelayQuery, RelayQuery, WireguardRelayQuery},
 };
@@ -591,7 +591,7 @@ impl RelaySelector {
         parsed_relays: &ParsedRelays,
     ) -> Result<WireguardConfig, Error> {
         let candidates =
-            new_filter_matching_relay_list(query, parsed_relays.relays(), config.custom_lists);
+            filter_matching_relay_list(query, parsed_relays.relays(), config.custom_lists);
         helpers::pick_random_relay(&candidates)
             .map(|exit| WireguardConfig::Singlehop { exit: exit.clone() })
             .ok_or(Error::NoRelay)
@@ -618,8 +618,8 @@ impl RelaySelector {
         // After we have our two queries (one for the exit relay & one for the entry relay),
         // we can query for all exit & entry candidates! All candidates are needed for the next step.
         let exit_candidates =
-            new_filter_matching_relay_list(query, parsed_relays.relays(), config.custom_lists);
-        let entry_candidates = new_filter_matching_relay_list(
+            filter_matching_relay_list(query, parsed_relays.relays(), config.custom_lists);
+        let entry_candidates = filter_matching_relay_list(
             &entry_relay_query,
             parsed_relays.relays(),
             config.custom_lists,
@@ -897,7 +897,7 @@ impl RelaySelector {
         }
 
         let matching_locations: Vec<Location> =
-            new_filter_matching_relay_list(query, parsed_relays.relays(), config.custom_lists)
+            filter_matching_relay_list(query, parsed_relays.relays(), config.custom_lists)
                 .into_iter()
                 .filter_map(|relay| relay.location)
                 .unique_by(|location| location.city.clone())
@@ -918,18 +918,8 @@ impl RelaySelector {
     ) -> Option<Relay> {
         // Filter among all valid relays
         let relays = parsed_relays.relays();
-        let candidates = new_filter_matching_relay_list(query, relays, config.custom_lists);
+        let candidates = filter_matching_relay_list(query, relays, config.custom_lists);
         // Pick one of the valid relays.
         helpers::pick_random_relay(&candidates).cloned()
-    }
-
-    /// Returns all relays matching the given `query`.
-    #[cfg(target_os = "android")]
-    fn get_tunnel_endpoints(
-        query: &RelayQuery,
-        config: &NormalSelectorConfig<'_>,
-        parsed_relays: &ParsedRelays,
-    ) -> Vec<Relay> {
-        todo!("Rework")
     }
 }
