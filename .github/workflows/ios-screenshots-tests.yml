@@ -47,10 +47,11 @@ jobs:
         with:
           xcode-version: '15.0.1'
       - name: Configure Rust
-        run: |
-          rustup default stable
-          rustup update stable
-          rustup target add aarch64-apple-ios-sim
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          target: aarch64-apple-ios-sim
 
       - name: Configure Xcode project
         run: |

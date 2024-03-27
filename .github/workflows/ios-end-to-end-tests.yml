@@ -30,10 +30,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure Rust
-        run: |
-          rustup default stable
-          rustup update stable
-          rustup target add aarch64-apple-ios aarch64-apple-ios-sim
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          target: aarch64-apple-ios aarch64-apple-ios-sim
 
       - name: Configure Xcode project
         run: |
