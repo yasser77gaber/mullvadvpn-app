@@ -1,8 +1,8 @@
 #![allow(unused)]
 
+use crate::proto::Timestamp;
 use chrono::DateTime;
 use mullvad_proc_macro::{IntoProto, UnwrapProto};
-use crate::proto::Timestamp;
 
 #[derive(Debug)]
 struct RelaySettings;
@@ -97,8 +97,6 @@ impl FromProto<proto::AppVersionInfo> for AppVersionInfo {
     }
 }
 
-pub type AppVersion = String;
-
 mod proto {
     use super::FromProto;
     use mullvad_proc_macro::{FromProto, IntoProto};
@@ -111,7 +109,7 @@ mod proto {
         pub suggested_upgrade: Option<String>,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, FromProto)]
     pub struct Device {
         pub created: Timestamp,
     }
@@ -123,12 +121,28 @@ mod proto {
     }
 
     mod mullvad_types {
+        use crate::FromProto;
+        use chrono::TimeZone;
+
         #[derive(Debug)]
         pub struct AppVersionInfo {
             pub supported: bool,
             pub latest_stable: String,
             pub latest_beta: String,
             pub suggested_upgrade: Option<String>,
+        }
+
+        pub struct Device {
+            pub created: chrono::DateTime<chrono::Utc>,
+        }
+
+        impl FromProto<super::Timestamp> for chrono::DateTime<chrono::Utc> {
+            fn from_proto(other: super::Timestamp) -> Self {
+                let naive_date_time =
+                    chrono::NaiveDateTime::from_timestamp_opt(other.seconds, other.nanos as u32)
+                        .unwrap();
+                chrono::Utc.from_utc_datetime(&naive_date_time)
+            }
         }
     }
 }
