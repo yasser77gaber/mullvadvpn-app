@@ -2,6 +2,7 @@
 
 use chrono::DateTime;
 use mullvad_proc_macro::{IntoProto, UnwrapProto};
+use crate::proto::Timestamp;
 
 #[derive(Debug)]
 struct RelaySettings;
@@ -85,12 +86,24 @@ impl IntoProto<proto::Timestamp> for chrono::DateTime<chrono::Utc> {
     }
 }
 
+impl FromProto<proto::AppVersionInfo> for AppVersionInfo {
+    fn from_proto(other: proto::AppVersionInfo) -> Self {
+        AppVersionInfo {
+            latest_beta: other.latest_beta,
+            latest_stable: other.latest_stable,
+            suggested_upgrade: other.suggested_upgrade,
+            supported: other.supported,
+        }
+    }
+}
+
 pub type AppVersion = String;
 
 mod proto {
-    use mullvad_proc_macro::IntoProto;
+    use super::FromProto;
+    use mullvad_proc_macro::{FromProto, IntoProto};
 
-    #[derive(Debug)]
+    #[derive(Debug, FromProto)]
     pub struct AppVersionInfo {
         pub supported: bool,
         pub latest_stable: String,
@@ -108,6 +121,16 @@ mod proto {
         pub seconds: i64,
         pub nanos: i32,
     }
+
+    mod mullvad_types {
+        #[derive(Debug)]
+        pub struct AppVersionInfo {
+            pub supported: bool,
+            pub latest_stable: String,
+            pub latest_beta: String,
+            pub suggested_upgrade: Option<String>,
+        }
+    }
 }
 
 trait IntoProto<T> {
@@ -117,6 +140,16 @@ trait IntoProto<T> {
 impl<T: Into<S>, S> IntoProto<S> for T {
     fn into_proto(self) -> S {
         self.into()
+    }
+}
+
+trait FromProto<T> {
+    fn from_proto(other: T) -> Self;
+}
+
+impl<T: From<S>, S> FromProto<S> for T {
+    fn from_proto(other: S) -> Self {
+        Self::from(other)
     }
 }
 

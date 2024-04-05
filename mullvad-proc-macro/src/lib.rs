@@ -162,3 +162,62 @@ mod inner2 {
         })
     }
 }
+
+#[proc_macro_derive(FromProto)]
+pub fn from_proto_derive(item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as DeriveInput);
+
+    crate::inner3::derive(input).into()
+}
+
+mod inner3 {
+
+    use proc_macro2::TokenStream;
+    use quote::{quote, TokenStreamExt};
+    use syn::{spanned::Spanned, DeriveInput, Error};
+
+    pub(crate) fn derive(input: DeriveInput) -> TokenStream {
+        if let syn::Data::Struct(data) = &input.data {
+            derive_for_struct(&input, data).unwrap_or_else(Error::into_compile_error)
+        } else {
+            syn::Error::new(
+                input.span(),
+                "Deriving `FromProto` is only supported for structs",
+            )
+                .into_compile_error()
+        }
+    }
+
+    pub(crate) fn derive_for_struct(
+        input: &DeriveInput,
+        data: &syn::DataStruct,
+    ) -> syn::Result<TokenStream> {
+        let my_type = &input.ident;
+        let mut field_conversions = quote! {};
+        for field in &data.fields {
+            let Some(name) = &field.ident else {
+                return Err(syn::Error::new(
+                    field.span(),
+                    "Tuple structs are not currently supported",
+                ));
+            };
+
+            field_conversions.append_all(quote! {
+                #name: FromProto::from_proto(other.#name),
+            })
+        }
+
+        // TODO: take proto type as argument
+        let real_type = quote! { mullvad_types::#my_type };
+
+        Ok(quote! {
+            impl FromProto<#my_type> for #real_type {
+                fn from_proto(other: #my_type) -> Self {
+                    Self {
+                        #field_conversions
+                    }
+                }
+            }
+        })
+    }
+}
