@@ -2253,6 +2253,7 @@ dependencies = [
  "futures",
  "log",
  "mullvad-paths",
+ "mullvad-proc-macro",
  "mullvad-types",
  "nix 0.23.2",
  "once_cell",
@@ -2308,6 +2309,15 @@ dependencies = [
  "uuid",
  "windows-sys 0.52.0",
  "winres",
+]
+
+[[package]]
+name = "mullvad-proc-macro"
+version = "0.0.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.51",
 ]
 
 [[package]]

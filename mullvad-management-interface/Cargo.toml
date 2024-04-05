@@ -15,6 +15,7 @@ chrono = { workspace = true }
 thiserror = { workspace = true }
 mullvad-types = { path = "../mullvad-types" }
 mullvad-paths = { path = "../mullvad-paths" }
+mullvad-proc-macro =  {path = "../mullvad-proc-macro"}
 talpid-types = { path = "../talpid-types" }
 tonic = { workspace = true }
 tower = { workspace = true }

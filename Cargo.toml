@@ -26,6 +26,7 @@ members = [
     "mullvad-types",
     "mullvad-types/intersection-derive",
     "mullvad-version",
+    "mullvad-proc-macro",
     "talpid-core",
     "talpid-dbus",
     "talpid-future",
