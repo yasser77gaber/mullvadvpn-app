@@ -1,34 +1,60 @@
-#[allow(unused)]
+#![allow(unused)]
 use mullvad_proc_macro::UnwrapProto;
 
-#[derive(UnwrapProto, Debug, PartialEq, Eq)]
-struct TestMe {
-    name: String,
-    middle_name: Option<String>,
-    company: Option<String>,
-    age: u8,
+#[derive(Debug)]
+struct RelaySettings;
+#[derive(Debug)]
+struct BridgeSettings;
+#[derive(Debug)]
+struct BridgeState;
+#[derive(Debug)]
+struct TunnelOptions;
+#[derive(Debug)]
+struct SplitTunnelSettings;
+#[derive(Debug)]
+struct ObfuscationSettings;
+#[derive(Debug)]
+struct CustomListSettings;
+#[derive(Debug)]
+struct ApiAccessMethodSettings;
+#[derive(Debug)]
+struct RelayOverride;
+
+#[derive(UnwrapProto, Debug)]
+pub struct Settings {
+    relay_settings: Option<RelaySettings>,
+    bridge_settings: Option<BridgeSettings>,
+    bridge_state: Option<BridgeState>,
+    allow_lan: bool,
+    block_when_disconnected: bool,
+    auto_connect: bool,
+    tunnel_options: Option<TunnelOptions>,
+    show_beta_releases: bool,
+    split_tunnel: Option<SplitTunnelSettings>,
+    obfuscation_settings: Option<ObfuscationSettings>,
+    custom_lists: Option<CustomListSettings>,
+    api_access_methods: Option<ApiAccessMethodSettings>,
+    relay_overrides: Vec<RelayOverride>,
 }
 
 #[test]
 fn test_generate_unwrapped() {
-    let me = TestMe {
-        name: "Sebastian".into(),
-        middle_name: Some("Ludvig".into()),
-        company: Some("Mullvad VPN".into()),
-        age: 26,
+    let settings_proto = Settings {
+        relay_settings: Some(RelaySettings),
+        bridge_settings: Some(BridgeSettings),
+        bridge_state: Some(BridgeState),
+        allow_lan: true,
+        block_when_disconnected: false,
+        auto_connect: true,
+        tunnel_options: Some(TunnelOptions),
+        show_beta_releases: true,
+        split_tunnel: Some(SplitTunnelSettings),
+        obfuscation_settings: Some(ObfuscationSettings),
+        custom_lists: Some(CustomListSettings),
+        api_access_methods: Some(ApiAccessMethodSettings),
+        relay_overrides: vec![],
     };
-    println!("me: {me:#?}");
 
-    let unwrapped_me = TestMeUnwrapped::try_from(me).unwrap();
-    println!("unwrapped_me: {unwrapped_me:#?}");
-
-    assert_eq!(
-        unwrapped_me,
-        TestMeUnwrapped {
-            name: "Sebastian".to_owned(),
-            middle_name: "Ludvig".to_owned(),
-            company: "Mullvad VPN".to_owned(),
-            age: 26,
-        }
-    );
+    let settings = SettingsUnwrapped::try_from(settings_proto).expect("Failed to parse setting");
+    dbg!(settings);
 }

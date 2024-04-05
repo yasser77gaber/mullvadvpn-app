@@ -4,7 +4,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 
-use syn::{parse_macro_input, DeriveInput, Ident};
+use syn::{parse_macro_input, DeriveInput};
 
 #[proc_macro_derive(UnwrapProto)]
 pub fn unwrap_proto_derive(item: TokenStream) -> TokenStream {
@@ -53,10 +53,10 @@ mod inner {
                 ));
             };
 
-            println!("Field: {:#?}", field.ty);
+            // println!("Field: {:#?}", field.ty);
 
             if let Type::Path(path) = &field.ty {
-                println!("inner path: {:#?}", path.path);
+                // println!("inner path: {:#?}", path.path);
                 let path_segment = path.path.segments.last().expect("Typ should exist");
                 if path_segment.ident == "Option" {
                     match &path_segment.arguments {
@@ -72,7 +72,7 @@ mod inner {
                         _ => unimplemented!(),
                     }
 
-                    println!("Field was an option")
+                    // println!("Field was an option")
                 } else {
                     out_fields.append_all(quote! {
                         #name: #path,
@@ -86,7 +86,7 @@ mod inner {
         }
 
         Ok(quote! {
-            #[derive(Debug, PartialEq, Eq)]
+            #[derive(Debug)]
             struct #generated_struct_name {
                 #out_fields
             }
