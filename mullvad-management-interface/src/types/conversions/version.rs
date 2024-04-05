@@ -15,6 +15,25 @@ impl IntoProto<proto::AppVersionInfo> for mullvad_types::version::AppVersionInfo
     }
 }
 
+macro_rules! impl_into_proto_for_value_type {
+    ($ty:ty) => {
+        impl IntoProto<$ty> for $ty {
+            fn into_proto(self) -> $ty {
+                self
+            }
+        }
+    };
+}
+
+impl_into_proto_for_value_type!(bool);
+impl_into_proto_for_value_type!(String);
+
+impl From<mullvad_types::version::AppVersionInfo> for proto::AppVersionInfo {
+    fn from(version_info: mullvad_types::version::AppVersionInfo) -> Self {
+        version_info.into_proto()
+    }
+}
+
 trait FromProto<T> {
     fn from_proto(value: T) -> Self;
 }
@@ -27,12 +46,6 @@ impl FromProto<proto::AppVersionInfo> for mullvad_types::version::AppVersionInfo
             latest_beta: value.latest_beta,
             suggested_upgrade: value.suggested_upgrade,
         }
-    }
-}
-
-impl From<mullvad_types::version::AppVersionInfo> for proto::AppVersionInfo {
-    fn from(version_info: mullvad_types::version::AppVersionInfo) -> Self {
-        version_info.into_proto()
     }
 }
 

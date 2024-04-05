@@ -1,5 +1,5 @@
 #![allow(unused)]
-use mullvad_proc_macro::UnwrapProto;
+use mullvad_proc_macro::{IntoProto, UnwrapProto};
 
 #[derive(Debug)]
 struct RelaySettings;
@@ -38,7 +38,7 @@ pub struct Settings {
 }
 
 #[test]
-fn test_generate_unwrapped() {
+fn unwrap_setting() {
     let settings_proto = Settings {
         relay_settings: Some(RelaySettings),
         bridge_settings: Some(BridgeSettings),
@@ -56,5 +56,62 @@ fn test_generate_unwrapped() {
     };
 
     let settings = SettingsUnwrapped::try_from(settings_proto).expect("Failed to parse setting");
+    dbg!(settings);
+}
+
+// proto -> real
+
+#[derive(IntoProto, Debug)]
+pub struct AppVersionInfo {
+    pub supported: bool,
+    pub latest_stable: String,
+    pub latest_beta: String,
+    pub suggested_upgrade: Option<String>,
+}
+
+pub type AppVersion = String;
+
+mod proto {
+    #[derive(Debug)]
+    pub struct AppVersionInfo {
+        pub supported: bool,
+        pub latest_stable: String,
+        pub latest_beta: String,
+        pub suggested_upgrade: Option<String>,
+    }
+}
+
+trait IntoProto<T> {
+    fn into_proto(self) -> T;
+}
+impl<T: IntoProto<S>, S> IntoProto<Option<S>> for Option<T> {
+    fn into_proto(self) -> Option<S> {
+        self.map(|val| val.into_proto())
+    }
+}
+
+macro_rules! impl_into_proto_for_value_type {
+    ($ty:ty) => {
+        impl IntoProto<$ty> for $ty {
+            fn into_proto(self) -> $ty {
+                self
+            }
+        }
+    };
+}
+
+impl_into_proto_for_value_type!(bool);
+impl_into_proto_for_value_type!(String);
+
+#[test]
+fn test_generate_into_proto() {
+    let settings_proto = AppVersionInfo {
+        latest_beta: "2025.1-beta2".to_owned(),
+        latest_stable: "2025.1".to_owned(),
+        suggested_upgrade: Some("2030.1".to_owned()),
+        supported: false,
+    };
+
+    let settings = settings_proto.into_proto();
     dbg!(settings);
 }

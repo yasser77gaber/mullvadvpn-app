@@ -103,3 +103,62 @@ mod inner {
         })
     }
 }
+
+#[proc_macro_derive(IntoProto)]
+pub fn into_proto_derive(item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as DeriveInput);
+
+    inner2::derive(input).into()
+}
+
+mod inner2 {
+
+    use proc_macro2::TokenStream;
+    use quote::{format_ident, quote, TokenStreamExt};
+    use syn::{spanned::Spanned, DeriveInput, Error};
+
+    pub(crate) fn derive(input: DeriveInput) -> TokenStream {
+        if let syn::Data::Struct(data) = &input.data {
+            derive_for_struct(&input, data).unwrap_or_else(Error::into_compile_error)
+        } else {
+            syn::Error::new(
+                input.span(),
+                "Deriving `IntoProto` is only supported for structs",
+            )
+            .into_compile_error()
+        }
+    }
+
+    pub(crate) fn derive_for_struct(
+        input: &DeriveInput,
+        data: &syn::DataStruct,
+    ) -> syn::Result<TokenStream> {
+        let my_type = &input.ident;
+        let mut field_conversions = quote! {};
+        for field in &data.fields {
+            let Some(name) = &field.ident else {
+                return Err(syn::Error::new(
+                    field.span(),
+                    "Tuple structs are not currently supported",
+                ));
+            };
+
+            field_conversions.append_all(quote! {
+                #name: IntoProto::into_proto(self.#name),
+            })
+        }
+
+        // TODO: take proto type as argument
+        let proto_type = quote! { proto::#my_type };
+
+        Ok(quote! {
+            impl IntoProto<#proto_type> for #my_type {
+                fn into_proto(self) -> #proto_type {
+                    #proto_type {
+                        #field_conversions
+                    }
+                }
+            }
+        })
+    }
+}
