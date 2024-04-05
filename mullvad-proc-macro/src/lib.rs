@@ -3,20 +3,21 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
+
 use syn::{parse_macro_input, DeriveInput, Ident};
 
-/// Derive macro for the [`Intersection`] trait on structs.
-#[proc_macro_derive(Intersection)]
-pub fn intersection_derive(item: TokenStream) -> TokenStream {
+#[proc_macro_derive(UnwrapProto)]
+pub fn unwrap_proto_derive(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
 
     inner::derive(input).into()
 }
 
 mod inner {
+
     use proc_macro2::TokenStream;
-    use quote::{quote, TokenStreamExt};
-    use syn::{spanned::Spanned, DeriveInput, Error};
+    use quote::{format_ident, quote, TokenStreamExt};
+    use syn::{spanned::Spanned, DeriveInput, Error, Type};
 
     pub(crate) fn derive(input: DeriveInput) -> TokenStream {
         if let syn::Data::Struct(data) = &input.data {
@@ -34,8 +35,15 @@ mod inner {
         input: &DeriveInput,
         data: &syn::DataStruct,
     ) -> syn::Result<TokenStream> {
-        let my_type = &input.ident;
-        let mut field_conversions = quote! {};
+        // println!("Deriving on:\n{}", quote! {#input});
+        // let ident = &input.ident;
+        // println!("Deriving on:\n{}", quote! {#ident});
+
+        let struct_name = &input.ident;
+        let generated_struct_name = format_ident!("{}Unwrapped", struct_name);
+
+        let mut out_fields = quote! {};
+
         for field in &data.fields {
             let Some(name) = &field.ident else {
                 return Err(syn::Error::new(
@@ -44,24 +52,37 @@ mod inner {
                 ));
             };
 
-            // TODO(Sebastian): Here, and in the `quote` below, we are referring to `Intersection`
-            // with its relative name, which will fail if the user renames the trait
-            // when importing, e.g. `use mullvad_types::Intersection as SomethingElse`.
-            // This is a know limitation of procural macros (declarative macros can use the `$crate`
-            // syntax). If the issue arises then it can be solve using the
-            // <https://crates.io/crates/proc-macro-crate> crate. Add it if necessary.
-            field_conversions.append_all(quote! {
-                #name: Intersection::intersection(self.#name, other.#name)?,
-            })
+            println!("Field: {:#?}", field.ty);
+
+            if let Type::Path(path) = &field.ty {
+                println!("inner path: {:#?}", path.path);
+                let path_segment = path.path.segments.last().expect("Typ should exist");
+                if path_segment.ident == "Option" {
+                    match &path_segment.arguments {
+                        syn::PathArguments::AngleBracketed(wrapped_arg) => {
+                            let arg = wrapped_arg
+                                .args
+                                .first()
+                                .expect("expected inner option type");
+                            out_fields.append_all(quote! {
+                                #name: #arg,
+                            });
+                        }
+                        _ => unimplemented!(),
+                    }
+
+                    println!("Field was an option")
+                } else {
+                    out_fields.append_all(quote! {
+                        #name: #path,
+                    });
+                }
+            }
         }
 
         Ok(quote! {
-            impl Intersection for #my_type {
-                fn intersection(self, other: Self) -> ::core::option::Option<Self> {
-                    ::core::option::Option::Some(Self {
-                        #field_conversions
-                    })
-                }
+            struct #generated_struct_name {
+                #out_fields
             }
         })
     }
