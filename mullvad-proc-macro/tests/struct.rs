@@ -1,4 +1,6 @@
 #![allow(unused)]
+
+use chrono::DateTime;
 use mullvad_proc_macro::{IntoProto, UnwrapProto};
 
 #[derive(Debug)]
@@ -69,9 +71,25 @@ pub struct AppVersionInfo {
     pub suggested_upgrade: Option<String>,
 }
 
+#[derive(IntoProto, Debug)]
+pub struct Device {
+    pub created: chrono::DateTime<chrono::Utc>,
+}
+
+impl IntoProto<proto::Timestamp> for chrono::DateTime<chrono::Utc> {
+    fn into_proto(self) -> proto::Timestamp {
+        proto::Timestamp {
+            seconds: self.timestamp(),
+            nanos: 0,
+        }
+    }
+}
+
 pub type AppVersion = String;
 
 mod proto {
+    use mullvad_proc_macro::IntoProto;
+
     #[derive(Debug)]
     pub struct AppVersionInfo {
         pub supported: bool,
@@ -79,29 +97,28 @@ mod proto {
         pub latest_beta: String,
         pub suggested_upgrade: Option<String>,
     }
+
+    #[derive(Debug)]
+    pub struct Device {
+        pub created: Timestamp,
+    }
+
+    #[derive(Debug)]
+    pub struct Timestamp {
+        pub seconds: i64,
+        pub nanos: i32,
+    }
 }
 
 trait IntoProto<T> {
     fn into_proto(self) -> T;
 }
-impl<T: IntoProto<S>, S> IntoProto<Option<S>> for Option<T> {
-    fn into_proto(self) -> Option<S> {
-        self.map(|val| val.into_proto())
+
+impl<T: Into<S>, S> IntoProto<S> for T {
+    fn into_proto(self) -> S {
+        self.into()
     }
 }
-
-macro_rules! impl_into_proto_for_value_type {
-    ($ty:ty) => {
-        impl IntoProto<$ty> for $ty {
-            fn into_proto(self) -> $ty {
-                self
-            }
-        }
-    };
-}
-
-impl_into_proto_for_value_type!(bool);
-impl_into_proto_for_value_type!(String);
 
 #[test]
 fn test_generate_into_proto() {
@@ -112,6 +129,13 @@ fn test_generate_into_proto() {
         supported: false,
     };
 
-    let settings = settings_proto.into_proto();
+    let settings: proto::AppVersionInfo = settings_proto.into_proto();
+    dbg!(settings);
+
+    let device_proto = Device {
+        created: DateTime::default(),
+    };
+
+    let settings: proto::Device = device_proto.into_proto();
     dbg!(settings);
 }

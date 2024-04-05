@@ -2315,6 +2315,7 @@ dependencies = [
 name = "mullvad-proc-macro"
 version = "0.0.0"
 dependencies = [
+ "chrono",
  "proc-macro2",
  "quote",
  "syn 2.0.51",

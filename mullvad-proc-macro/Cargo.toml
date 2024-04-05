@@ -13,3 +13,4 @@ proc-macro = true
 proc-macro2 = "1"
 syn = { version= "2", features = ["extra-traits"] }
 quote = "1"
+chrono.workspace = true
