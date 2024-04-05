@@ -43,6 +43,7 @@ mod inner {
         let generated_struct_name = format_ident!("{}Unwrapped", struct_name);
 
         let mut out_fields = quote! {};
+        let mut field_conversions = quote! {};
 
         for field in &data.fields {
             let Some(name) = &field.ident else {
@@ -60,12 +61,12 @@ mod inner {
                 if path_segment.ident == "Option" {
                     match &path_segment.arguments {
                         syn::PathArguments::AngleBracketed(wrapped_arg) => {
-                            let arg = wrapped_arg
-                                .args
-                                .first()
-                                .expect("expected inner option type");
+                            let arg = wrapped_arg.args.first().unwrap();
                             out_fields.append_all(quote! {
                                 #name: #arg,
+                            });
+                            field_conversions.append_all(quote! {
+                                #name: other.#name.ok_or(())?,
                             });
                         }
                         _ => unimplemented!(),
@@ -76,13 +77,28 @@ mod inner {
                     out_fields.append_all(quote! {
                         #name: #path,
                     });
+
+                    field_conversions.append_all(quote! {
+                        #name: other.#name,
+                    });
                 }
             }
         }
 
         Ok(quote! {
+            #[derive(Debug, PartialEq, Eq)]
             struct #generated_struct_name {
                 #out_fields
+            }
+
+            impl TryFrom<#struct_name> for #generated_struct_name {
+                type Error = ();
+
+                fn try_from(other: #struct_name) -> Result<Self, ()> {
+                    Ok(Self {
+                        #field_conversions
+                    })
+                }
             }
         })
     }
