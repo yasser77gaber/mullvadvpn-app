@@ -4,6 +4,21 @@ use mullvad_types::account::{AccountData, VoucherSubmission};
 
 use super::FromProtobufTypeError;
 
+use mullvad_proc_macro::IntoProto;
+
+trait IntoProto<T> {
+    fn into_proto(self) -> T;
+}
+
+impl IntoProto<types::Timestamp> for chrono::DateTime<chrono::Utc> {
+    fn into_proto(self) -> types::Timestamp {
+        types::Timestamp {
+            seconds: self.timestamp(),
+            nanos: 0,
+        }
+    }
+}
+
 impl From<VoucherSubmission> for types::VoucherSubmission {
     fn from(submission: VoucherSubmission) -> Self {
         types::VoucherSubmission {

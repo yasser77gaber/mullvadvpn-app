@@ -114,7 +114,7 @@ pub fn into_proto_derive(item: TokenStream) -> TokenStream {
 mod inner2 {
 
     use proc_macro2::TokenStream;
-    use quote::{format_ident, quote, TokenStreamExt};
+    use quote::{quote, TokenStreamExt};
     use syn::{spanned::Spanned, DeriveInput, Error};
 
     pub(crate) fn derive(input: DeriveInput) -> TokenStream {
