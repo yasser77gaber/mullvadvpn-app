@@ -1,10 +1,10 @@
-{ lib, config, ... }: 
+{ lib, config, ... }:
 with lib; let
     cfg = config.services.nftables;
 in
   {
   options.services.nftables.internetHostOverride = mkOption {
-    type = types.string;
+    type = types.str;
     default = false;
     description = ''
       Gateway address to which traffic to 8.8.8.8:80 will be forwarded to.
