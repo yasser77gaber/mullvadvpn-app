@@ -27,6 +27,10 @@ impl BlockList {
         self.apply_rules()
     }
 
+    pub fn rules(&self) -> &BTreeMap<uuid::Uuid, Vec<BlockRule>> {
+        &self.rules
+    }
+
     fn apply_rules(&mut self) -> io::Result<()> {
         let table = Table::new(&*TABLE_NAME, ProtoFamily::Inet);
         let batch = self.create_batch(&table);

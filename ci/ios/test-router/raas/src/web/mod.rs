@@ -13,6 +13,7 @@ pub mod routes;
 
 pub fn router(block_list: BlockList) -> Router {
     Router::new()
+        .route("/rules", get(routes::list_all_rules))
         .route("/rule", post(routes::add_rule))
         .route("/remove-rules/:label", delete(routes::delete_rules))
         .route("/capture", post(capture::start))

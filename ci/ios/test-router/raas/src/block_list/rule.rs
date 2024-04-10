@@ -4,7 +4,7 @@ use nftnl::{expr, nft_expr, Chain, Rule};
 
 use std::{collections::BTreeSet, iter, net::IpAddr};
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize)]
 pub struct BlockRule {
     pub src: IpAddr,
     pub dst: IpAddr,

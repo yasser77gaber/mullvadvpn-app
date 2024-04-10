@@ -1,4 +1,7 @@
-use std::{collections::BTreeSet, net::IpAddr};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    net::IpAddr,
+};
 
 use axum::{
     extract::{Json, Path, State},
@@ -18,7 +21,7 @@ pub struct NewRule {
     pub label: Uuid,
 }
 
-#[derive(serde::Deserialize, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
+#[derive(serde::Deserialize, serde::Serialize, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum TransportProtocol {
     Tcp,
@@ -90,5 +93,22 @@ fn respond_with_result(result: anyhow::Result<()>, success_code: StatusCode) -> 
     match result {
         Ok(_) => (success_code, String::new()),
         Err(err) => (StatusCode::SERVICE_UNAVAILABLE, format!("{err}\n")),
+    }
+}
+
+pub async fn list_all_rules(State(state): State<super::State>) -> impl IntoResponse {
+    let all_rules = tokio::task::spawn_blocking(move || -> anyhow::Result<BTreeMap<_, _>> {
+        let Ok(fw) = state.block_list.lock() else {
+            return Err(anyhow::anyhow!("Firewall thread panicked"));
+        };
+
+        Ok(fw.rules().clone())
+    })
+    .await
+    .expect("failed to join blocking task");
+
+    match all_rules {
+        Ok(all_rules) => axum::Json(all_rules).into_response(),
+        Err(err) => (StatusCode::SERVICE_UNAVAILABLE, format!("{err}\n")).into_response(),
     }
 }
