@@ -4,12 +4,7 @@ mod web;
 
 #[tokio::main]
 async fn main() {
-    let mut builder = env_logger::Builder::from_env(env_logger::DEFAULT_FILTER_ENV);
-    builder
-        .filter(None, log::LevelFilter::Info)
-        .write_style(env_logger::WriteStyle::Always)
-        .format_timestamp(None)
-        .init();
+    init_logging();
 
     let mut args = std::env::args().skip(1);
     let bind_address = args.next().expect("First arg must be listening address");
@@ -26,4 +21,13 @@ async fn main() {
     );
 
     axum::serve(listener, router).await.unwrap();
+}
+
+fn init_logging() {
+    let mut builder = env_logger::Builder::from_env(env_logger::DEFAULT_FILTER_ENV);
+    builder
+        .filter(None, log::LevelFilter::Info)
+        .write_style(env_logger::WriteStyle::Always)
+        .format_timestamp(None)
+        .init();
 }
