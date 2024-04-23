@@ -49,6 +49,7 @@ runs:
         set -o pipefail && env NSUnbufferedIO=YES xcodebuild \
           -project MullvadVPN.xcodeproj \
           -scheme MullvadVPNUITests \
+          -resultBundlePath test-report \
           -testPlan $XCODE_TEST_PLAN \
           -destination "platform=iOS,id=$TEST_DEVICE_UDID" \
           clean test 2>&1 | xcbeautify --report junit --report-path test-report
