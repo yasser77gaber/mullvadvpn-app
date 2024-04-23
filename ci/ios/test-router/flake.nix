@@ -9,9 +9,9 @@
       modules = [
         (import ./router-config.nix {
           ssid = "app-team-ios-tests";
-          lanMac = "48:21:0b:36:bb:52";
-          wanMac = "48:21:0b:36:43:a3";
-          wifiMac = "bc:6e:e2:a8:38:51";
+          lanMac = "a0:ce:c8:ab:bd:2d";
+          wanMac = "88:ae:dd:64:e1:55";
+          wifiMac = "28:c5:d2:81:28:c4";
           lanIp = "192.168.105.1/24";
         })
         ./app-team-ios-lab.nix
