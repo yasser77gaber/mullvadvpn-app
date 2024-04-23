@@ -1,23 +1,13 @@
 use futures::StreamExt;
 use pcap::{Device, Packet, PacketCodec, PacketHeader};
-use std::collections::BTreeMap;
-use std::io;
-use std::sync::mpsc as sync_mpsc;
-use tokio::sync::oneshot;
-use tokio::{
-    fs::File,
-    io::BufReader,
-};
+use std::{collections::BTreeMap, io, sync::mpsc as sync_mpsc};
+use tokio::{fs::File, io::BufReader, sync::oneshot};
 use tokio_util::io::ReaderStream;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("The capture is in progress")]
     CaptureInProgress,
-    #[error("Failed to look up device")]
-    DeviceLookup(#[source] pcap::Error),
-    #[error("No device found")]
-    NoDeviceFound,
     #[error("Failed to capture handle for device")]
     OpenHandle(#[source] pcap::Error),
     #[error("Failed to make capture nonblocking")]
@@ -62,9 +52,14 @@ impl Capture {
             return Err(Error::CaptureInProgress);
         }
 
-        let device = Device::lookup()
-            .map_err(Error::DeviceLookup)?
-            .ok_or(Error::NoDeviceFound)?;
+        // Use the magic any device.
+        // This will remove the ethernet frames from the packets.
+        let device = Device {
+            name: "any".into(),
+            desc: None,
+            addresses: vec![],
+            flags: pcap::DeviceFlags::empty(),
+        };
 
         let capture = pcap::Capture::from_device(device)
             .map_err(Error::OpenHandle)?
@@ -75,7 +70,7 @@ impl Capture {
             .map_err(Error::EnableNonblock)?;
 
         let dump_path = std::env::temp_dir().join(label.to_string());
-        let mut dump = capture.savefile(&dump_path).map_err(Error::CreateDump)?;
+        let mut dump = capture.savefile(dump_path).map_err(Error::CreateDump)?;
 
         let (stop_tx, mut stop_rx) = oneshot::channel();
 
@@ -115,10 +110,7 @@ impl Capture {
             Ok(())
         });
 
-        let context = Context {
-            capture,
-            stop_tx,
-        };
+        let context = Context { capture, stop_tx };
 
         self.captures.insert(label, context);
 
