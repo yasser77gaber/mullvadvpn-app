@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use axum::{
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use tower_http::trace::TraceLayer;
@@ -21,6 +21,7 @@ pub fn router(block_list: BlockList) -> Router {
         .route("/capture", post(capture::start))
         .route("/stop-capture/:label", post(capture::stop))
         .route("/last-capture/:label", get(capture::get))
+        .route("/parse-capture/:label", put(capture::parse))
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
         .with_state(State {
             block_list: Arc::new(Mutex::new(block_list)),

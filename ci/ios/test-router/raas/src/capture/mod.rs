@@ -2,7 +2,9 @@ use futures::StreamExt;
 use pcap::{Device, Packet, PacketCodec, PacketHeader};
 use std::{collections::BTreeMap, io, sync::mpsc as sync_mpsc};
 use tokio::{fs::File, io::BufReader, sync::oneshot};
-use tokio_util::io::ReaderStream;
+
+mod parse;
+pub use parse::parse_pcap;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -127,7 +129,7 @@ impl Capture {
         Ok(())
     }
 
-    pub async fn get(&self, label: uuid::Uuid) -> Result<ReaderStream<BufReader<File>>, Error> {
+    pub async fn get(&self, label: uuid::Uuid) -> Result<BufReader<File>, Error> {
         if self.captures.contains_key(&label) {
             return Err(Error::CaptureInProgress);
         }
@@ -138,6 +140,6 @@ impl Capture {
         }
 
         let file = File::open(dump_path).await.map_err(Error::ReadPcap)?;
-        Ok(ReaderStream::new(BufReader::new(file)))
+        Ok(BufReader::new(file))
     }
 }

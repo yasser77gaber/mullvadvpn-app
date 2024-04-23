@@ -1,3 +1,5 @@
+use std::{collections::BTreeSet, net::IpAddr};
+
 use axum::{
     body::Body,
     extract::{Json, Path, State},
@@ -50,7 +52,7 @@ pub async fn get(Path(label): Path<Uuid>, State(state): State<super::State>) -> 
         }
     };
 
-    let body = Body::from_stream(stream);
+    let body = Body::from_stream(tokio_util::io::ReaderStream::new(stream));
     let mut headers = header::HeaderMap::new();
     headers.insert(
         header::CONTENT_TYPE,
@@ -62,6 +64,26 @@ pub async fn get(Path(label): Path<Uuid>, State(state): State<super::State>) -> 
     );
 
     (headers, body).into_response()
+}
+
+pub async fn parse(
+    Path(label): Path<Uuid>,
+    State(state): State<super::State>,
+    Json(host_addrs): Json<BTreeSet<IpAddr>>,
+) -> impl IntoResponse {
+    let state = state.capture.lock().await;
+
+    let stream = match state.get(label).await {
+        Ok(stream) => stream,
+        Err(err) => {
+            return (StatusCode::SERVICE_UNAVAILABLE, format!("{err}\n")).into_response();
+        }
+    };
+
+    match crate::capture::parse_pcap(stream, host_addrs).await {
+        Ok(parsed_connections) => (StatusCode::OK, Json(parsed_connections)).into_response(),
+        Err(err) => (StatusCode::SERVICE_UNAVAILABLE, format!("{err}\n")).into_response(),
+    }
 }
 
 fn respond_with_result(result: anyhow::Result<()>, success_code: StatusCode) -> impl IntoResponse {
