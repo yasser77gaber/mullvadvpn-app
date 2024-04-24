@@ -54,17 +54,11 @@ class MullvadVPNScreenshots: XCTestCase {
         textField.typeText(accountToken)
 
         // Tap "Log in" button to log in
-        if case .phone = UIDevice.current.userInterfaceIdiom {
-            app.toolbars["Toolbar"].buttons[AccessibilityIdentifier.loginBarButton.rawValue].tap()
-        } else {
-            textField.typeText("\n")
-        }
+        app.toolbars["Toolbar"].buttons[AccessibilityIdentifier.loginBarButton.rawValue].tap()
 
         // Select Sweden, Gothenburg in Select location controller
-        if case .phone = UIDevice.current.userInterfaceIdiom {
-            _ = app.buttons[AccessibilityIdentifier.selectLocationButton.rawValue].waitForExistence(timeout: 10)
-            app.buttons[AccessibilityIdentifier.selectLocationButton.rawValue].tap()
-        }
+        _ = app.buttons[AccessibilityIdentifier.selectLocationButton.rawValue].waitForExistence(timeout: 10)
+        app.buttons[AccessibilityIdentifier.selectLocationButton.rawValue].tap()
 
         let countryCell = app.cells["se"]
         let cityCell = app.cells["se-got"]
@@ -84,21 +78,19 @@ class MullvadVPNScreenshots: XCTestCase {
 
         snapshot("MainSecured")
 
-        // Re-open Select location controller (iPhone only)
-        if case .phone = UIDevice.current.userInterfaceIdiom {
-            app.buttons[AccessibilityIdentifier.selectLocationButton.rawValue].tap()
-            cityCell.buttons[AccessibilityIdentifier.expandButton.rawValue].tap()
-            snapshot("SelectLocation")
+        // Re-open Select location controller
+        app.buttons[AccessibilityIdentifier.selectLocationButton.rawValue].tap()
+        cityCell.buttons[AccessibilityIdentifier.expandButton.rawValue].tap()
+        snapshot("SelectLocation")
 
-            // Tap the "Filter" button and expand each relay filter
-            app.navigationBars.buttons["Filter"].tap()
-            app.otherElements["Ownership"].buttons[AccessibilityIdentifier.collapseButton.rawValue].tap()
-            app.otherElements["Providers"].buttons[AccessibilityIdentifier.collapseButton.rawValue].tap()
-            snapshot("RelayFilter")
+        // Tap the "Filter" button and expand each relay filter
+        app.navigationBars.buttons["Filter"].tap()
+        app.otherElements["Ownership"].buttons[AccessibilityIdentifier.collapseButton.rawValue].tap()
+        app.otherElements["Providers"].buttons[AccessibilityIdentifier.collapseButton.rawValue].tap()
+        snapshot("RelayFilter")
 
-            app.navigationBars.buttons["Cancel"].tap()
-            app.navigationBars.buttons["Done"].tap()
-        }
+        app.navigationBars.buttons["Cancel"].tap()
+        app.navigationBars.buttons["Done"].tap()
 
         // Open Settings
         app.buttons[AccessibilityIdentifier.settingsButton.rawValue].tap()
