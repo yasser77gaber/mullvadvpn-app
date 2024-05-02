@@ -219,6 +219,7 @@ impl AndroidTunProvider {
     fn prepare_tun_config(&self, config: &mut TunConfig) {
         self.prepare_tun_config_for_allow_lan(config);
         self.prepare_tun_config_for_custom_dns(config);
+        maybe_set_dummy_dns_servers(config);
     }
 
     fn prepare_tun_config_for_allow_lan(&self, config: &mut TunConfig) {
@@ -322,6 +323,14 @@ impl AndroidTunProvider {
 
         Ok(JnixEnv::from(jni_env))
     }
+}
+
+/// Add dummy servers if no DNS servers are set. Android may sometimes leak DNS otherwise.
+fn maybe_set_dummy_dns_servers(config: &mut TunConfig) {
+    if !config.dns_servers.is_empty() {
+        return;
+    }
+    config.dns_servers = vec!["192.0.2.1".parse().unwrap()];
 }
 
 /// Handle to a tunnel device on Android.
