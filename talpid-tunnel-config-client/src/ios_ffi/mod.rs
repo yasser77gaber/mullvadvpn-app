@@ -93,3 +93,39 @@ pub unsafe extern "C" fn negotiate_post_quantum_key(
         Err(err) => err,
     }
 }
+
+#[derive(Debug)]
+pub struct CancelErr(());
+
+pub struct Cancellable<F: Future> {
+    rx: oneshot::Receiver<()>,
+    f: F,
+}
+
+pub struct CancelHandle {
+    tx: oneshot::Sender<()>,
+}
+
+impl CancelHandle {
+    fn cancel(self) {
+        let _ = self.tx.send(());
+    }
+}
+
+
+impl<F> Cancellable<F>
+where
+    F: Future + Unpin,
+{
+    fn new(f: F) -> (Self, CancelHandle) {
+        let (tx, rx) = oneshot::channel();
+        (Self { f, rx }, CancelHandle { tx })
+    }
+
+    async fn into_future(self) -> std::result::Result<F::Output, CancelErr> {
+        match future::select(self.rx, self.f).await {
+            Either::Left(_) => Err(CancelErr(())),
+            Either::Right((value, _)) => Ok(value),
+        }
+    }
+}
