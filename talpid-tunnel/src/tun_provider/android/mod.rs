@@ -223,7 +223,7 @@ impl AndroidTunProvider {
         }
     }
 
-    fn prepare_tun_config(&self, config: &mut TunConfig, blocking: bool) {
+    fn prepare_tun_config(&mut self, config: &mut TunConfig, blocking: bool) {
         self.blocking = blocking;
         self.prepare_tun_config_for_allow_lan(config);
         if !blocking {
