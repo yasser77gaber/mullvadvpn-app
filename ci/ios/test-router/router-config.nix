@@ -18,6 +18,7 @@ in
   ];
 
   services.nftables.internetHostOverride = gatewayAddress;
+  services.nftables.bridgeOverride = "185.213.154.117";
 
   environment.systemPackages = with pkgs; [ htop vim curl dig tcpdump cargo ];
 
