@@ -182,7 +182,7 @@ in
   };
   services.hostapd.radios.wifi = {
     wifi5.enable = false;
-    wifi4.capabilities = [ "HT40+" "HT40-" "HT20" "SHORT-GI-20" "SHORT-GI-40" ];
+    wifi4.capabilities = [ "HT40+" "HT40-" "HT20" "SHORT-GI-20" "SHORT-GI-40" "SHORT-GI-80"];
 
     countryCode = "SE";
     band = "2g";
