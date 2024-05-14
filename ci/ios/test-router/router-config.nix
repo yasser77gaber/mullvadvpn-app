@@ -1,8 +1,8 @@
-args@{ ssid, # SSID of the WiFi network, also the hostname
-lanMac, # MAC address of the local area network interface
-wanMac, # MAC address of the upstream interface
-wifiMac, # MAC address of the WiFi interface
-lanIp, # IP adderss/subnet
+args@{
+  hostname, # hostname of the router
+  lanMac, # MAC address of the local area network interface
+  wanMac, # MAC address of the upstream interface
+  lanIp, # IP adderss/subnet
 }:
 { config, pkgs, lib, ... }:
 
@@ -27,7 +27,7 @@ in
   boot.loader.systemd-boot.memtest86.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = args.ssid;
+  networking.hostName = args.hostname;
   networking.useDHCP = true;
 
   system.stateVersion = "23.11";
@@ -51,10 +51,7 @@ in
     linkConfig.Name = "wan";
   };
 
-  systemd.network.links."1-wifiIface" = {
-    matchConfig.PermanentMACAddress = args.wifiMac;
-    linkConfig.Name = "wifi";
-  };
+
   networking = { firewall.enable = false; };
   hardware.bluetooth.enable = false;
 
@@ -100,7 +97,7 @@ in
     };
 
     dhcpV4Config = {
-      Hostname = args.ssid;
+      Hostname = args.hostname;
       UseDNS = true;
     };
 
@@ -108,7 +105,7 @@ in
   };
 
   # obtain all leases
-  # if=wifi; \
+  # if=lan; \
   # link_id="$(ip --oneline link show dev "$if" | cut -f 1 -d:)"; \
   # busctl -j get-property org.freedesktop.network1 \
   #  "/org/freedesktop/network1/link/${link_id}" \
@@ -120,11 +117,7 @@ in
     networkConfig.Bridge = "lan";
     linkConfig.RequiredForOnline = "enslaved";
   };
-  systemd.network.networks."wifi" = {
-    matchConfig.Name = "wifi";
-    networkConfig.Bridge = "lan";
-    linkConfig.RequiredForOnline = "enslaved";
-  };
+
 
   systemd.network.networks.lan = {
     name = "lan";
@@ -174,43 +167,6 @@ in
   hardware = {
     cpu.intel.updateMicrocode = true;
     enableRedistributableFirmware = true;
-  };
-
-  services.hostapd.enable = true;
-  systemd.services.hostapd = {
-    bindsTo = [ "sys-subsystem-net-devices-wifi.device" ];
-  };
-  services.hostapd.radios.wifi = {
-    wifi5.enable = false;
-    wifi4.capabilities = [ "HT40+" "HT40-" "HT20" "SHORT-GI-20" "SHORT-GI-40" "SHORT-GI-80"];
-
-    countryCode = "SE";
-    band = "2g";
-    networks.wifi = {
-      # the regular NixOS config is too strict w.r.t. to old WPA standards, so for increased compatibility we should use this.
-      settings = {
-        "channel" = lib.mkForce "7";
-        "driver" = lib.mkForce "nl80211";
-        "ht_capab" =
-          lib.mkForce "[HT40+][HT40-][HT20][SHORT-GI-20][SHORT-GI-40]";
-        "hw_mode" = lib.mkForce "g";
-        "ieee80211w" = lib.mkForce "1";
-        "ieee80211d" = lib.mkForce "1";
-        "ieee80211h" = lib.mkForce "1";
-        "ieee80211n" = lib.mkForce "1";
-        "noscan" = lib.mkForce "0";
-        "require_ht" = lib.mkForce "0";
-        "wpa_key_mgmt" = lib.mkForce "WPA-PSK WPA-PSK-SHA256 SAE";
-        "group_mgmt_cipher" = lib.mkForce "AES-128-CMAC";
-      };
-      ssid = args.ssid;
-      authentication = {
-        mode = "wpa2-sha256";
-        # ¡¡¡ CREATE THESE FILES WITH THE NECESSARY PASSWORD !!!
-        wpaPasswordFile = "/wifi-password";
-        saePasswordsFile = "/wifi-sae-passwords";
-      };
-    };
   };
 
   # disable logging forever
