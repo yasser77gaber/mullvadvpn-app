@@ -83,6 +83,10 @@ impl TunnelParameters {
                 address: *endpoint,
                 protocol: TransportProtocol::Tcp,
             },
+            ObfuscatorConfig::Shadowsocks { endpoint } => Endpoint {
+                address: *endpoint,
+                protocol: TransportProtocol::Udp,
+            },
         }
     }
 
@@ -240,6 +244,13 @@ impl From<&ObfuscatorConfig> for ObfuscationEndpoint {
                     protocol: TransportProtocol::Tcp,
                 },
                 ObfuscationType::Udp2Tcp,
+            ),
+            ObfuscatorConfig::Shadowsocks { endpoint } => (
+                Endpoint {
+                    address: *endpoint,
+                    protocol: TransportProtocol::Udp,
+                },
+                ObfuscationType::Shadowsocks,
             ),
         };
 

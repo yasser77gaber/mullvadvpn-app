@@ -39,7 +39,8 @@ use talpid_types::{
 };
 use tokio::sync::Mutex as AsyncMutex;
 use tunnel_obfuscation::{
-    create_obfuscator, Error as ObfuscationError, Settings as ObfuscationSettings, Udp2TcpSettings,
+    create_obfuscator, Error as ObfuscationError, Settings as ObfuscationSettings,
+    ShadowsocksSettings, Udp2TcpSettings,
 };
 
 /// WireGuard config data-types
@@ -210,6 +211,12 @@ async fn maybe_create_obfuscator(
                     peer: *endpoint,
                     #[cfg(target_os = "linux")]
                     fwmark: config.fwmark,
+                })
+            }
+            ObfuscatorConfig::Shadowsocks { endpoint } => {
+                ObfuscationSettings::Shadowsocks(ShadowsocksSettings {
+                    shadowsocks_endpoint: *endpoint,
+                    wireguard_endpoint: config.entry_peer.endpoint,
                 })
             }
         };
