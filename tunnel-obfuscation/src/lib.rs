@@ -4,6 +4,9 @@ use std::net::SocketAddr;
 mod udp2tcp;
 pub use udp2tcp::Udp2TcpSettings;
 
+mod shadowsocks;
+pub use shadowsocks::ShadowsocksSettings;
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(thiserror::Error, Debug)]
@@ -13,6 +16,12 @@ pub enum Error {
 
     #[error("Failed to run Udp2Tcp obfuscator")]
     RunUdp2TcpObfuscator(#[source] udp2tcp::Error),
+
+    #[error("Failed to initialize Shadowsocks")]
+    CreateShadowsocksObfuscator(#[source] shadowsocks::Error),
+
+    #[error("Failed to run Shadowsocks")]
+    RunShadowsocksObfuscator(#[source] shadowsocks::Error),
 }
 
 #[async_trait]
@@ -29,6 +38,7 @@ pub trait Obfuscator: Send {
 
 pub enum Settings {
     Udp2Tcp(Udp2TcpSettings),
+    Shadowsocks(ShadowsocksSettings),
 }
 
 pub async fn create_obfuscator(settings: &Settings) -> Result<Box<dyn Obfuscator>> {
@@ -36,5 +46,8 @@ pub async fn create_obfuscator(settings: &Settings) -> Result<Box<dyn Obfuscator
         Settings::Udp2Tcp(s) => udp2tcp::create_obfuscator(s)
             .await
             .map_err(Error::CreateUdp2TcpObfuscator),
+        Settings::Shadowsocks(s) => shadowsocks::create_obfuscator(s)
+            .await
+            .map_err(Error::CreateShadowsocksObfuscator),
     }
 }
