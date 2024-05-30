@@ -44,6 +44,7 @@ struct Shadowsocks {
     _shutdown_tx: oneshot::Sender<()>,
 }
 
+#[derive(Debug)]
 pub struct ShadowsocksSettings {
     /// Remote Shadowsocks endpoint
     pub shadowsocks_endpoint: SocketAddr,

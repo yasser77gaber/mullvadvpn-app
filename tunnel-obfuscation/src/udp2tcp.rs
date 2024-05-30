@@ -6,6 +6,7 @@ use udp_over_tcp::{
     TcpOptions,
 };
 
+#[derive(Debug)]
 pub struct Udp2TcpSettings {
     pub peer: SocketAddr,
     #[cfg(target_os = "linux")]

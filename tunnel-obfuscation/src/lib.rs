@@ -36,6 +36,7 @@ pub trait Obfuscator: Send {
     fn remote_socket_fd(&self) -> std::os::unix::io::RawFd;
 }
 
+#[derive(Debug)]
 pub enum Settings {
     Udp2Tcp(Udp2TcpSettings),
     Shadowsocks(ShadowsocksSettings),
