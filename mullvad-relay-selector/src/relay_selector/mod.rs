@@ -343,7 +343,7 @@ impl<'a> From<NormalSelectorConfig<'a>> for RelayQuery {
                 use_multihop: Constraint::Only(use_multihop),
                 entry_location,
                 obfuscation: obfuscation_settings.selected_obfuscation,
-                udp2tcp_port: Constraint::Only(obfuscation_settings.udp2tcp.clone()),
+                udp2tcp_port: Constraint::Only(obfuscation_settings.udp2tcp),
                 daita: Constraint::Only(daita),
             }
         }

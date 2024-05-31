@@ -231,11 +231,11 @@ message TunnelEndpoint {
   bool daita = 9;
 }
 
-enum ObfuscationType {
-  UDP2TCP = 0;
-}
-
 message ObfuscationEndpoint {
+  enum ObfuscationType {
+    UDP2TCP = 0;
+  }
+
   string address = 1;
   uint32 port = 2;
   TransportProtocol protocol = 3;
