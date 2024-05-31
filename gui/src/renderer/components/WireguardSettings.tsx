@@ -309,7 +309,6 @@ function Udp2tcpPortSetting() {
           items={portItems}
           value={port}
           onSelect={selectPort}
-          disabled={obfuscationSettings.selectedObfuscation === ObfuscationType.off}
           expandable={expandableProps}
           thinTitle
           automaticValue={'any' as const}
