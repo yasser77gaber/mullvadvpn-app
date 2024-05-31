@@ -218,8 +218,12 @@ function ObfuscationSettings() {
   const obfuscationTypeItems: SelectorItem<ObfuscationType>[] = useMemo(
     () => [
       {
-        label: messages.pgettext('wireguard-settings-view', 'On (UDP-over-TCP)'),
+        label: messages.pgettext('wireguard-settings-view', 'UDP-over-TCP'),
         value: ObfuscationType.udp2tcp,
+      },
+      {
+        label: messages.pgettext('wireguard-settings-view', 'Shadowsocks'),
+        value: ObfuscationType.shadowsocks,
       },
       {
         label: messages.gettext('Off'),
