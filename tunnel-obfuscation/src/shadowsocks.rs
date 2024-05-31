@@ -8,11 +8,7 @@ use shadowsocks::{
     relay::{udprelay::proxy_socket::ProxySocketError, Address},
     ProxySocket,
 };
-use std::{
-    io,
-    net::{Ipv4Addr, Ipv6Addr, SocketAddr},
-    sync::Arc,
-};
+use std::{io, net::SocketAddr, sync::Arc};
 use tokio::{net::UdpSocket, sync::oneshot};
 
 const SHADOWSOCKS_CIPHER: CipherKind = CipherKind::AES_256_GCM;
@@ -101,11 +97,7 @@ async fn run_obfuscation(
     let local_udp = Arc::new(local_udp_socket);
     let shadowsocks = Arc::new(shadowsocks);
 
-    let wg_addr = match wireguard_endpoint {
-        SocketAddr::V4(v4_addr) => SocketAddr::from((Ipv4Addr::LOCALHOST, v4_addr.port())),
-        SocketAddr::V6(v6_addr) => SocketAddr::from((Ipv6Addr::LOCALHOST, v6_addr.port())),
-    };
-    let wg_addr = Address::SocketAddress(wg_addr);
+    let wg_addr = Address::SocketAddress(wireguard_endpoint);
 
     let mut client = tokio::spawn(handle_outgoing(
         shadowsocks.clone(),

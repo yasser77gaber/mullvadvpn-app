@@ -16,7 +16,7 @@ use std::env;
 use std::io;
 use std::{
     convert::Infallible,
-    net::IpAddr,
+    net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
     path::Path,
     pin::Pin,
     sync::{mpsc as sync_mpsc, Arc, Mutex},
@@ -216,7 +216,13 @@ async fn maybe_create_obfuscator(
             ObfuscatorConfig::Shadowsocks { endpoint } => {
                 ObfuscationSettings::Shadowsocks(shadowsocks::Settings {
                     shadowsocks_endpoint: *endpoint,
-                    wireguard_endpoint: config.entry_peer.endpoint,
+                    // TODO: Temporary since we may different entry IPs later?
+                    wireguard_endpoint: if config.entry_peer.endpoint.is_ipv4() {
+                        SocketAddr::from((Ipv4Addr::LOCALHOST, 51820))
+                    } else {
+                        SocketAddr::from((Ipv6Addr::LOCALHOST, 51820))
+                    },
+                    //wireguard_endpoint: config.entry_peer.endpoint,
                     #[cfg(target_os = "linux")]
                     fwmark: config.fwmark,
                 })
