@@ -38,14 +38,14 @@ pub enum Error {
     ConnectShadowsocks(#[source] ProxySocketError),
 }
 
-struct Shadowsocks {
+pub struct Shadowsocks {
     udp_client_addr: SocketAddr,
     server: tokio::task::JoinHandle<Result<()>>,
     _shutdown_tx: oneshot::Sender<()>,
 }
 
 #[derive(Debug)]
-pub struct ShadowsocksSettings {
+pub struct Settings {
     /// Remote Shadowsocks endpoint
     pub shadowsocks_endpoint: SocketAddr,
     /// Remote WireGuard endpoint
@@ -55,7 +55,7 @@ pub struct ShadowsocksSettings {
 }
 
 impl Shadowsocks {
-    pub async fn new(settings: &ShadowsocksSettings) -> Result<Self> {
+    pub(crate) async fn new(settings: &Settings) -> Result<Self> {
         let (local_udp_socket, udp_client_addr) =
             create_local_udp_socket(settings.shadowsocks_endpoint.is_ipv4()).await?;
 
@@ -233,10 +233,6 @@ impl Obfuscator for Shadowsocks {
     fn remote_socket_fd(&self) -> std::os::unix::io::RawFd {
         todo!("return remote socket fd")
     }
-}
-
-pub async fn create_obfuscator(settings: &ShadowsocksSettings) -> Result<Box<dyn Obfuscator>> {
-    Ok(Box::new(Shadowsocks::new(settings).await?))
 }
 
 /// Return whether retrying is a lost cause
