@@ -3,8 +3,10 @@
 use std::net::SocketAddr;
 
 use mullvad_types::{
-    constraints::Constraint, endpoint::MullvadWireguardEndpoint,
-    relay_constraints::Udp2TcpObfuscationSettings, relay_list::Relay,
+    constraints::Constraint,
+    endpoint::MullvadWireguardEndpoint,
+    relay_constraints::{ShadowsocksSettings, Udp2TcpObfuscationSettings},
+    relay_list::Relay,
 };
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use talpid_types::net::obfuscation::ObfuscatorConfig;
@@ -86,4 +88,22 @@ pub fn get_udp2tcp_obfuscator_port(
         // There are no specific obfuscation settings to take into consideration in this case.
         Constraint::Any | Constraint::Only(_) => udp2tcp_ports.choose(&mut thread_rng()).copied(),
     }
+}
+
+pub fn get_shadowsocks_obfuscator(
+    settings: &Constraint<ShadowsocksSettings>,
+    relay: Relay,
+    endpoint: &MullvadWireguardEndpoint,
+) -> Option<SelectedObfuscator> {
+    const DEFAULT_SHADOWSOCKS_PORT: u16 = 1024;
+
+    let port = settings
+        .as_ref()
+        .and_then(|settings| settings.port)
+        .unwrap_or(DEFAULT_SHADOWSOCKS_PORT);
+    let config = ObfuscatorConfig::Shadowsocks {
+        endpoint: SocketAddr::new(endpoint.peer.endpoint.ip(), port),
+    };
+
+    Some(SelectedObfuscator { config, relay })
 }
