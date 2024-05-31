@@ -4,6 +4,7 @@ use shadowsocks::{
     config::{ServerConfig, ServerType},
     context::Context,
     crypto::CipherKind,
+    net::ConnectOpts,
     relay::{udprelay::proxy_socket::ProxySocketError, Address},
     ProxySocket,
 };
@@ -66,6 +67,8 @@ impl Shadowsocks {
             settings.shadowsocks_endpoint,
             settings.wireguard_endpoint,
             shutdown_rx,
+            #[cfg(target_os = "linux")]
+            settings.fwmark,
         ));
 
         Ok(Shadowsocks {
@@ -81,14 +84,19 @@ async fn run_obfuscation(
     shadowsocks_endpoint: SocketAddr,
     wireguard_endpoint: SocketAddr,
     shutdown_rx: oneshot::Receiver<()>,
+    #[cfg(target_os = "linux")] fwmark: Option<u32>,
 ) -> Result<()> {
     wait_for_local_udp_client(&local_udp_socket)
         .await
         .map_err(Error::WaitForUdpClient)?;
 
-    let shadowsocks = create_shadowsocks_client(shadowsocks_endpoint)
-        .await
-        .map_err(Error::ConnectShadowsocks)?;
+    let shadowsocks = create_shadowsocks_client(
+        shadowsocks_endpoint,
+        #[cfg(target_os = "linux")]
+        fwmark,
+    )
+    .await
+    .map_err(Error::ConnectShadowsocks)?;
 
     let local_udp = Arc::new(local_udp_socket);
     let shadowsocks = Arc::new(shadowsocks);
@@ -124,6 +132,7 @@ async fn run_obfuscation(
 
 async fn create_shadowsocks_client(
     shadowsocks_endpoint: SocketAddr,
+    #[cfg(target_os = "linux")] fwmark: Option<u32>,
 ) -> std::result::Result<ProxySocket, ProxySocketError> {
     let ss_context = Context::new_shared(ServerType::Local);
     let ss_config: ServerConfig = ServerConfig::new(
@@ -131,7 +140,11 @@ async fn create_shadowsocks_client(
         SHADOWSOCKS_PASSWORD,
         SHADOWSOCKS_CIPHER,
     );
-    ProxySocket::connect(ss_context, &ss_config).await
+    let connect_opts = ConnectOpts {
+        fwmark,
+        ..Default::default()
+    };
+    ProxySocket::connect_with_opts(ss_context, &ss_config, &connect_opts).await
 }
 
 async fn create_local_udp_socket(ipv4: bool) -> Result<(UdpSocket, SocketAddr)> {

@@ -217,6 +217,8 @@ async fn maybe_create_obfuscator(
                 ObfuscationSettings::Shadowsocks(shadowsocks::Settings {
                     shadowsocks_endpoint: *endpoint,
                     wireguard_endpoint: config.entry_peer.endpoint,
+                    #[cfg(target_os = "linux")]
+                    fwmark: config.fwmark,
                 })
             }
         };
