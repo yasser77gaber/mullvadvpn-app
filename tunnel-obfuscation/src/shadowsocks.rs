@@ -133,6 +133,7 @@ async fn create_shadowsocks_client(
         SHADOWSOCKS_CIPHER,
     );
     let connect_opts = ConnectOpts {
+        #[cfg(target_os = "linux")]
         fwmark,
         ..Default::default()
     };
