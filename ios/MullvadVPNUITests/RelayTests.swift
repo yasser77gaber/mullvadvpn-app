@@ -279,6 +279,8 @@ class RelayTests: LoggedInWithTimeUITestCase {
         let dnsServerIPAddress = "8.8.8.8"
         let dnsServerProviderName = "GOOGLE"
 
+        startPacketCapture()
+
         TunnelControlPage(app)
             .tapSecureConnectionButton()
 
@@ -306,7 +308,12 @@ class RelayTests: LoggedInWithTimeUITestCase {
             .dismissKeyboard()
             .tapUseCustomDNSSwitch()
             .tapDoneButton()
+            .swipeDownToDismissModal()
 
         try Networking.verifyDNSServerProvider(dnsServerProviderName, isMullvad: false)
+
+        TunnelControlPage(app)
+            .tapDisconnectButton()
+        _ = self.stopPacketCapture()
     }
 }

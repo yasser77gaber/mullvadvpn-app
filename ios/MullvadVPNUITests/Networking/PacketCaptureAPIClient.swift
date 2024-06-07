@@ -102,7 +102,7 @@ class PacketCaptureAPIClient {
             endpoint: "parse-capture/\(session.identifier)",
             jsonData: [deviceIPAddress]
         )
-        
+
         return responseData
     }
 
