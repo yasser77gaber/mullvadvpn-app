@@ -71,7 +71,7 @@ struct MultihopPicker: RelayPicking {
             in: relays,
             filterConstraint: constraints.filter
         )
-
+        
         /*
          Relay selection is prioritised in the following order:
          1. Both entry and exit constraints match only a single relay. Both relays are selected.
