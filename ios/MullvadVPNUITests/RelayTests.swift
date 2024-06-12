@@ -99,6 +99,7 @@ class RelayTests: LoggedInWithTimeUITestCase {
 
         try Networking.verifyCanAccessInternet()
         try Networking.verifyConnectedThroughMullvad()
+        Thread.sleep(forTimeInterval: 5.0)
     }
 
     func testConnectionRetryLogic() throws {
