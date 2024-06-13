@@ -35,15 +35,12 @@ in
 
   boot.extraModulePackages = with config.boot.kernelPackages; [ rtl8812au ];
   boot.loader.systemd-boot.enable = true;
-  boot.loader.systemd-boot.memtest86.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
   networking.hostName = args.hostname;
   networking.useDHCP = true;
 
   system.stateVersion = "23.11";
-
-  # nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
   systemd.network.netdevs."1-lanBridge" = {
     netdevConfig = {
