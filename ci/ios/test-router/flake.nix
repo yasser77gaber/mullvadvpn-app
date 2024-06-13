@@ -14,6 +14,10 @@
           lanIp = "192.168.105.1/24";
         })
         ./app-team-ios-lab.nix
+        {
+          boot.loader.systemd-boot.enable = true;
+          boot.loader.efi.canTouchEfiVariables = true;
+        }
       ];
     };
 

@@ -34,8 +34,8 @@ in
   environment.systemPackages = with pkgs; [ htop vim curl dig tcpdump cargo ];
 
   boot.extraModulePackages = with config.boot.kernelPackages; [ rtl8812au ];
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
+  # boot.loader.systemd-boot.enable = true;
+  # boot.loader.efi.canTouchEfiVariables = true;
 
   networking.hostName = args.hostname;
   networking.useDHCP = true;
