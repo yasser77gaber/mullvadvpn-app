@@ -1,16 +1,25 @@
 args@{
   hostname, # hostname of the router
-  lanMac, # MAC address of the local area network interface
+  lanMac ? null, # MAC address of the local area network interface
+  wifiMac ? null, # MAC address of the local area network interface
   wanMac, # MAC address of the upstream interface
   lanIp, # IP adderss/subnet
 }:
+
 { config, pkgs, lib, ... }:
+let
+  ifNotNull = maybeNull: attrSet: lib.attrsets.optionalAttrs (!builtins.isNull maybeNull) attrSet;
+in
 
 let
   raas = pkgs.callPackage ./raas.nix {};
 
   gatewayIpGroup = builtins.match "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)/[0-9]+" args.lanIp;
   gatewayAddress = builtins.elemAt gatewayIpGroup 0;
+
+  gatherInterfaces = lib.lists.optionals (!builtins.isNull lanMac) [ "lan" ]
+    ++ lib.lists.optionals (!builtins.isNull wifiMac) [ "wifi" ];
+
 in
 {
   imports = [
@@ -19,6 +28,8 @@ in
 
   services.nftables.internetHostOverride = gatewayAddress;
   services.nftables.bridgeOverride = "185.213.154.117";
+
+  services.nftables.lanInterfaces = lib.strings.concatStrings (lib.strings.intersperse "," gatherInterfaces);
 
   environment.systemPackages = with pkgs; [ htop vim curl dig tcpdump cargo ];
 
@@ -41,9 +52,14 @@ in
     };
   };
 
-  systemd.network.links."1-lanIface" = {
+  systemd.network.links."1-lanIface" = ifNotNull lanMac {
     matchConfig.PermanentMACAddress = args.lanMac;
     linkConfig.Name = "lanEth";
+  };
+
+  systemd.network.links."1-wifiIface" = ifNotNull wifiMac {
+    matchConfig.PermanentMACAddress = args.wifiMac;
+    linkConfig.Name = "wifi";
   };
 
   systemd.network.links."1-wanIface" = {
@@ -111,8 +127,13 @@ in
   #  "/org/freedesktop/network1/link/${link_id}" \
   #  org.freedesktop.network1.DHCPServer \
   #  Leases
+  systemd.network.networks."wifi" = ifNotNull wifiMac {
+    matchConfig.Name = "wifi";
+    networkConfig.Bridge = "lan";
+    linkConfig.RequiredForOnline = "enslaved";
+  };
 
-  systemd.network.networks."lanEth" = {
+  systemd.network.networks."lanEth" = ifNotNull lanMac {
     matchConfig.Name = "lanEth";
     networkConfig.Bridge = "lan";
     linkConfig.RequiredForOnline = "enslaved";
@@ -189,6 +210,7 @@ in
   };
 
   systemd.services.raas =
+
   let
     listenIpGroup = builtins.match "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)/[0-9]+" args.lanIp;
     listenAddress = builtins.elemAt listenIpGroup 0;
@@ -202,4 +224,44 @@ in
       ${raas}/bin/raas ${listenAddress}:80
     '';
   };
+
+  services.hostapd.enable = !builtins.isNull wifiMac;
+  systemd.services.hostapd = ifNotNull wifiMac {
+    bindsTo = [ "sys-subsystem-net-devices-wifi.device" ];
+  };
+
+  services.hostapd.radios.wifi = ifNotNull wifiMac {
+    wifi5.enable = false;
+    wifi4.capabilities = [ "HT40+" "HT40-" "HT20" "SHORT-GI-20" "SHORT-GI-40" "SHORT-GI-80"];
+
+    countryCode = "SE";
+    band = "2g";
+    networks.wifi = {
+      # the regular NixOS config is too strict w.r.t. to old WPA standards, so for increased compatibility we should use this.
+      settings = {
+        "channel" = lib.mkForce "7";
+        "driver" = lib.mkForce "nl80211";
+        "ht_capab" =
+          lib.mkForce "[HT40+][HT40-][HT20][SHORT-GI-20][SHORT-GI-40]";
+        "hw_mode" = lib.mkForce "g";
+        "ieee80211w" = lib.mkForce "1";
+        "ieee80211d" = lib.mkForce "1";
+        "ieee80211h" = lib.mkForce "1";
+        "ieee80211n" = lib.mkForce "1";
+        "noscan" = lib.mkForce "0";
+        "require_ht" = lib.mkForce "0";
+        "wpa_key_mgmt" = lib.mkForce "WPA-PSK WPA-PSK-SHA256 SAE";
+        "group_mgmt_cipher" = lib.mkForce "AES-128-CMAC";
+      };
+      ssid = args.hostname;
+      authentication = {
+        mode = "wpa2-sha256";
+        # ¡¡¡ CREATE THESE FILES WITH THE NECESSARY PASSWORD !!!
+        wpaPasswordFile = "/wifi-password";
+        saePasswordsFile = "/wifi-sae-passwords";
+      };
+    };
+  };
+
+
 }

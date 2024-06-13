@@ -11,6 +11,14 @@ in
       '';
     };
 
+    options.services.nftables.lanInterfaces = mkOption {
+      type = types.str;
+      default = false;
+      description = ''
+        A string representing the interfaces on the LAN side of the network.
+        '';
+    };
+
   options.services.nftables.bridgeOverride = mkOption {
     type = types.str;
     default = false;
@@ -60,8 +68,8 @@ in
          # - DNS
          # - DHCP
          # - DHCPv6
-         iifname { wan, wifi, lan } udp dport 53 counter accept
-         iifname { wan, wifi, lan } tcp dport 53 counter accept
+         iifname { wan, ${cfg.lanInterfaces} } udp dport 53 counter accept
+         iifname { wan, ${cfg.lanInterfaces} } tcp dport 53 counter accept
          iifname { wifi } udp sport 68 udp dport 67 counter accept
          iifname { wifi } ip6 saddr fe80::/10 udp sport 546 ip6 daddr fe80::/10 udp dport 547 accept
 
@@ -88,11 +96,6 @@ in
 
       }
 
-      # flowtable internetNat {
-      #   hook ingress priority 0;
-      #   devices = { lan, wan }
-      # }
-
       chain forward {
         type filter hook forward priority filter; policy drop;
 
@@ -104,7 +107,7 @@ in
 
         # Allow trusted network WAN access
         iifname {
-                "lan", "wifi"
+                ${cfg.lanInterfaces}
         } oifname {
                 "wan",
         } counter accept comment "Allow trusted LAN to WAN"
@@ -112,13 +115,13 @@ in
         iifname "lan" oifname "wifi" counter accept comment "Allow LAN to IoS WiFi"
 
         # Allow established WAN to return
-        iifname { "wan", "wifi" } oifname { "lan", "wifi" } ct state established,related counter accept comment "Allow established back to LANs"
+        iifname { "wan", "wifi" } oifname { ${cfg.lanInterfaces} } ct state established,related counter accept comment "Allow established back to LANs"
         iifname {"wan" } oifname { "lan" } ct mark 1919 accept comment "Allow DNAtted traffic"
       }
 
       chain srcnat {
         type nat hook postrouting priority srcnat; policy accept;
-        iifname { lan, wifi } masquerade comment "Masquerade all traffic"
+        iifname { ${cfg.lanInterfaces} }  masquerade comment "Masquerade all traffic"
       }
 
       chain dstnat {
