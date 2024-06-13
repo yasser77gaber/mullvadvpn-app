@@ -180,11 +180,6 @@ in
 
   services.resolved.enable = true;
 
-  hardware = {
-    cpu.intel.updateMicrocode = true;
-    enableRedistributableFirmware = true;
-  };
-
   # disable logging forever
   services.journald.extraConfig = ''
     Storage=Volatile;
