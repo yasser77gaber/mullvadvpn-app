@@ -33,8 +33,6 @@ in
 
   environment.systemPackages = with pkgs; [ htop vim curl dig tcpdump cargo ];
 
-  boot.extraModulePackages = with config.boot.kernelPackages; [ rtl8812au ];
-
   networking.hostName = args.hostname;
   networking.useDHCP = true;
 
