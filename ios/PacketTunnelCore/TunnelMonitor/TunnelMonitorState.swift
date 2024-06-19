@@ -8,6 +8,7 @@
 
 import Foundation
 import MullvadTypes
+import MullvadLogging
 
 /// Connection state.
 enum TunnelMonitorConnectionState {
@@ -73,6 +74,8 @@ struct TunnelMonitorState {
     // Timings and timeouts.
     let timings: TunnelMonitorTimings
 
+    let logger = Logger(label: "TunnelMonitorState")
+
     func evaluateConnection(now: Date, pingTimeout: Duration) -> ConnectionEvaluation {
         switch connectionState {
         case .connecting:
@@ -87,6 +90,7 @@ struct TunnelMonitorState {
     func getPingTimeout() -> Duration {
         switch connectionState {
         case .connecting:
+            logger.debug("getPingTimeout: \(retryAttempt)")
             let multiplier = timings.establishTimeoutMultiplier.saturatingPow(retryAttempt)
             let nextTimeout = timings.initialEstablishTimeout * Double(multiplier)
 

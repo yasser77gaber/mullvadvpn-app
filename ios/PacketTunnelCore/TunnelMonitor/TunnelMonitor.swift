@@ -203,6 +203,7 @@ public final class TunnelMonitor: TunnelMonitorProtocol {
         logger.debug("checkConnectivity timeout: \(timeout)")
 
         let evaluation = state.evaluateConnection(now: now, pingTimeout: timeout)
+        logger.debug("checkConnectivity evalutation: \(evaluation)")
 
         if evaluation != .ok {
             logger.trace("Evaluation: \(evaluation)")
