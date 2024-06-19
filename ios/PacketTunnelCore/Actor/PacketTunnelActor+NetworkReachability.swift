@@ -15,9 +15,10 @@ extension PacketTunnelActor {
      - Parameter notifyObserverWithCurrentPath: immediately notifies path observer with the current path when set to `true`.
      */
     func startDefaultPathObserver(notifyObserverWithCurrentPath: Bool = false) {
-        logger.trace("Start default path observer.")
+        logger.debug("Start default path observer.")
 
         defaultPathObserver.start { [weak self] networkPath in
+            self?.logger.debug("startDefaultPathObserver: \(networkPath.networkReachability)")
             self?.eventChannel.send(.networkReachability(networkPath))
         }
 
@@ -28,7 +29,7 @@ extension PacketTunnelActor {
 
     /// Stop observing changes to default path.
     func stopDefaultPathObserver() {
-        logger.trace("Stop default path observer.")
+        logger.debug("Stop default path observer.")
 
         defaultPathObserver.stop()
     }

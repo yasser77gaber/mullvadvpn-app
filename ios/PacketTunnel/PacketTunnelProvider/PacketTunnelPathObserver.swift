@@ -9,12 +9,14 @@
 import Combine
 import NetworkExtension
 import PacketTunnelCore
+import MullvadLogging
 
 final class PacketTunnelPathObserver: DefaultPathObserverProtocol {
     private weak var packetTunnelProvider: NEPacketTunnelProvider?
     private let stateLock = NSLock()
     private var pathUpdatePublisher: AnyCancellable?
     private let eventQueue: DispatchQueue
+    let logger = Logger(label: "PacketTunnelPathObserver")
 
     init(packetTunnelProvider: NEPacketTunnelProvider, eventQueue: DispatchQueue) {
         self.packetTunnelProvider = packetTunnelProvider
@@ -36,6 +38,7 @@ final class PacketTunnelPathObserver: DefaultPathObserverProtocol {
                 })
                 .throttle(for: .seconds(2), scheduler: eventQueue, latest: true)
                 .sink { change in
+                    self.logger.debug("PacketTunnelPathObserver: \(change)")
                     if let change {
                         body(change)
                     }

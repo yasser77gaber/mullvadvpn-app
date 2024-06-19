@@ -200,6 +200,8 @@ public final class TunnelMonitor: TunnelMonitorProtocol {
         state.updateNetStats(newStats: newStats, now: now)
 
         let timeout = state.getPingTimeout()
+        logger.debug("checkConnectivity timeout: \(timeout)")
+
         let evaluation = state.evaluateConnection(now: now, pingTimeout: timeout)
 
         if evaluation != .ok {
