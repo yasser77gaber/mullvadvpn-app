@@ -22,6 +22,7 @@ pub struct Firewall {
     pf: pfctl::PfCtl,
     pf_was_enabled: Option<bool>,
     rule_logging: RuleLogging,
+    secured: bool,
 }
 
 impl Firewall {
@@ -45,6 +46,7 @@ impl Firewall {
             pf: pfctl::PfCtl::new()?,
             pf_was_enabled: None,
             rule_logging,
+            secured: false,
         })
     }
 
@@ -53,16 +55,23 @@ impl Firewall {
         self.add_anchor()?;
         self.set_rules(policy)?;
 
-        // When entering a secured state, clear connection states
-        // Otherwise, an existing connection may be approved by some other anchor, and leak
-        if let Err(error) = self.pf.clear_interface_states(pfctl::Interface::Any) {
-            log::error!("Failed to clear source state tracking nodes: {error}");
+        if !self.secured {
+            // When entering a secured state, clear connection states
+            // Otherwise, an existing connection may be approved by some other anchor, and leak
+            // One common situation when this may occur is when internet sharing is enabled
+            if let Err(error) = self.pf.clear_interface_states(pfctl::Interface::Any) {
+                log::error!("Failed to clear source state tracking nodes: {error}");
+            }
+
+            self.secured = true;
         }
 
         Ok(())
     }
 
     pub fn reset_policy(&mut self) -> Result<()> {
+        self.secured = false;
+
         // Implemented this way to not early return on an error.
         // We always want all three methods to run, and then return
         // the first error it encountered, if any.
