@@ -22,7 +22,6 @@ pub struct Firewall {
     pf: pfctl::PfCtl,
     pf_was_enabled: Option<bool>,
     rule_logging: RuleLogging,
-    secured: bool,
 }
 
 impl Firewall {
@@ -46,32 +45,67 @@ impl Firewall {
             pf: pfctl::PfCtl::new()?,
             pf_was_enabled: None,
             rule_logging,
-            secured: false,
         })
     }
 
     pub fn apply_policy(&mut self, policy: FirewallPolicy) -> Result<()> {
         self.enable()?;
         self.add_anchor()?;
-        self.set_rules(policy)?;
+        self.set_rules(policy.clone())?;
 
-        if !self.secured {
-            // When entering a secured state, clear connection states
-            // Otherwise, an existing connection may be approved by some other anchor, and leak
-            // One common situation when this may occur is when internet sharing is enabled
-            if let Err(error) = self.pf.clear_interface_states(pfctl::Interface::Any) {
-                log::error!("Failed to clear source state tracking nodes: {error}");
-            }
-
-            self.secured = true;
+        if let Err(error) = self.flush_states(policy) {
+            log::error!("Failed to clear PF connection states: {error}");
         }
 
         Ok(())
     }
 
-    pub fn reset_policy(&mut self) -> Result<()> {
-        self.secured = false;
+    /// Clear PF connection states. That is, forget connections that were previously approved by a
+    /// `pass` rule, and force PF to make new verdicts.
+    /// PF retains approved connections forever, even after a responsible anchor or rule has been
+    /// removed. Therefore, they should be flushed after every state transition to ensure approved
+    /// states conform to our desired policy.
+    /// Clearing all states unfortunately seems to interrupt ephemeral key exchange on some
+    /// machines. Exempting the VPN server connection prevents this.
+    pub fn flush_states(&mut self, policy: FirewallPolicy) -> Result<u32> {
+        let peer_endpoint = policy.peer_endpoint().map(|endpoint| endpoint.endpoint);
+        let tunnel_ips = policy
+            .tunnel()
+            .map(|tunnel| tunnel.ips.clone())
+            .unwrap_or_default();
+        let allowed_tunnel_traffic = policy.allowed_tunnel_traffic();
 
+        self.pf.filter_states(move |state| {
+            match (peer_endpoint, state) {
+                (Some(peer), pfctl::State::Ip(yay)) => {
+                    if tunnel_ips.contains(&yay.local_address.ip()) {
+                        // Tunnel traffic: Clear states except those allowed in the tunnel
+                        // Ephemeral peer exchange becomes unreliable otherwise, when multihop is enabled
+                        match allowed_tunnel_traffic {
+                            AllowedTunnelTraffic::None => false,
+                            AllowedTunnelTraffic::All => true,
+                            AllowedTunnelTraffic::One(endpoint) => {
+                                endpoint.address == yay.remote_address
+                            }
+                            AllowedTunnelTraffic::Two(endpoint1, endpoint2) => {
+                                endpoint1.address == yay.remote_address
+                                    || endpoint2.address == yay.remote_address
+                            }
+                        }
+                    } else {
+                        // Non-tunnel traffic: Clear all states except traffic destined for the VPN endpoint
+                        // Ephemeral peer exchange becomes unreliable otherwise
+                        peer.address == yay.remote_address
+                            && as_pfctl_proto(peer.protocol) == yay.proto
+                    }
+                }
+                (None, pfctl::State::Ip(_)) => false,
+                _ => true,
+            }
+        })
+    }
+
+    pub fn reset_policy(&mut self) -> Result<()> {
         // Implemented this way to not early return on an error.
         // We always want all three methods to run, and then return
         // the first error it encountered, if any.
