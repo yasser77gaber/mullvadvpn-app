@@ -3,6 +3,7 @@ package net.mullvad.mullvadvpn.compose.extensions
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import co.touchlab.kermit.Logger
 
 fun Lifecycle.State.dropUnlessResumed(block: () -> Unit) =
     runOnAtLeast(Lifecycle.State.RESUMED, block)
@@ -28,7 +29,14 @@ fun <T> Lifecycle.State.runOnAtLeast(
 ): (T) -> Unit {
     return {
         if (isAtLeast(expectedState)) {
+            Logger.v(
+                "runOnAtLeast: run due to currentState($this) >= expectedState($expectedState)"
+            )
             block(it)
+        } else {
+            Logger.v(
+                "runOnAtLeast: drop due to currentState($this) < expectedState($expectedState)"
+            )
         }
     }
 }
