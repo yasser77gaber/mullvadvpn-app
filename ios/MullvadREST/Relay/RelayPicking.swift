@@ -30,8 +30,7 @@ extension RelayPicking {
         return SelectedRelay(
             endpoint: match.endpoint,
             hostname: match.relay.hostname,
-            location: match.location,
-            retryAttempts: connectionAttemptCount
+            location: match.location
         )
     }
 }
@@ -50,7 +49,7 @@ struct SinglehopPicker: RelayPicking {
 
         let match = try findBestMatch(from: candidates)
 
-        return SelectedRelays(entry: nil, exit: match)
+        return SelectedRelays(entry: nil, exit: match, retryAttempt: connectionAttemptCount)
     }
 }
 
@@ -71,7 +70,7 @@ struct MultihopPicker: RelayPicking {
             in: relays,
             filterConstraint: constraints.filter
         )
-        
+
         /*
          Relay selection is prioritised in the following order:
          1. Both entry and exit constraints match only a single relay. Both relays are selected.
