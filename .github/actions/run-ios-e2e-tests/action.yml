@@ -45,6 +45,10 @@ runs:
 
     - name: Run end-to-end-tests
       run: >
+        echo "$(cat $0)"
+
+        echo "Get relieved on"
+
         if [ -n "$TEST_NAME" ]; then TEST_NAME_ARGUMENT=" -only-testing $TEST_NAME"; else TEST_NAME_ARGUMENT=""; fi
 
         set -o pipefail && env NSUnbufferedIO=YES xcodebuild
